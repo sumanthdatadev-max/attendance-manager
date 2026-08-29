@@ -47,6 +47,7 @@ class MemberViewModel(
         name: String,
         mobile: String?,
         joiningDate: String,
+        classNumber: Int = 1,
         onResult: (Boolean, String) -> Unit
     ) {
         viewModelScope.launch {
@@ -66,6 +67,7 @@ class MemberViewModel(
                     memberId = trimmedId,
                     name = trimmedName,
                     mobile = mobile?.trim()?.ifBlank { null },
+                    classNumber = classNumber,
                     joiningDate = joiningDate,
                     leavingDate = null,
                     isActive = true

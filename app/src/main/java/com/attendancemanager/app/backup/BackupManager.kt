@@ -53,6 +53,7 @@ class BackupManager(
             obj.put("memberId", m.memberId)
             obj.put("name", m.name)
             obj.put("mobile", m.mobile ?: JSONObject.NULL)
+            obj.put("classNumber", m.classNumber)
             obj.put("joiningDate", m.joiningDate)
             obj.put("leavingDate", m.leavingDate ?: JSONObject.NULL)
             obj.put("isActive", m.isActive)
@@ -99,6 +100,7 @@ class BackupManager(
                         memberId = obj.getString("memberId"),
                         name = obj.getString("name"),
                         mobile = if (obj.isNull("mobile")) null else obj.getString("mobile"),
+                        classNumber = obj.optInt("classNumber", 1),
                         joiningDate = obj.getString("joiningDate"),
                         leavingDate = if (obj.isNull("leavingDate")) null else obj.getString("leavingDate"),
                         isActive = obj.optBoolean("isActive", true)

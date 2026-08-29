@@ -95,7 +95,7 @@ class FeeRepository(
      * Should be called once per month.
      */
     suspend fun generateMonthlyFees(yearMonth: String) {
-        val members = memberDao.getAllActiveMembers()
+        val members = memberDao.getAllMembersOnce()
         for (member in members) {
             val feeAmount = calculateFeeByClass(member.classNumber)
             val fee = Fee(
@@ -108,5 +108,12 @@ class FeeRepository(
             )
             feeDao.insertOrUpdateFee(fee)
         }
+    }
+
+    /**
+     * Insert or update a fee record.
+     */
+    suspend fun insertOrUpdateFee(fee: Fee) {
+        feeDao.insertOrUpdateFee(fee)
     }
 }

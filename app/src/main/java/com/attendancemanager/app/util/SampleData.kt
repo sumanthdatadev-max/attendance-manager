@@ -115,7 +115,7 @@ object SampleData {
             
             // Save all fee records to database
             fees.forEach { fee ->
-                feeRepository.feeDao.insertOrUpdateFee(fee)
+                feeRepository.insertOrUpdateFee(fee)
             }
         }
     }
