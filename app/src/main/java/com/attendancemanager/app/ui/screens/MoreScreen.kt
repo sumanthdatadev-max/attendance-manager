@@ -1,5 +1,6 @@
-package com.attendancemanager.app.ui.screens
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
+package com.attendancemanager.app.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
