@@ -6,12 +6,14 @@ import androidx.compose.material.icons.filled.Assessment
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.ui.graphics.vector.ImageVector
 
 object Routes {
     const val HOME = "home"
     const val ATTENDANCE = "attendance"
     const val MEMBERS = "members"
+    const val FEES = "fees"
     const val REPORTS = "reports"
     const val MORE = "more"
 
@@ -33,6 +35,7 @@ val bottomNavItems = listOf(
     BottomNavItem(Routes.HOME, "Home", Icons.Filled.Home),
     BottomNavItem(Routes.ATTENDANCE, "Attendance", Icons.Filled.CalendarMonth),
     BottomNavItem(Routes.MEMBERS, "Members", Icons.Filled.Groups),
+    BottomNavItem(Routes.FEES, "Fees", Icons.Filled.Receipt),
     BottomNavItem(Routes.REPORTS, "Reports", Icons.Filled.Assessment),
     BottomNavItem(Routes.MORE, "More", Icons.Filled.MoreHoriz)
 )
