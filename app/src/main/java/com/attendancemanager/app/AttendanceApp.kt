@@ -30,7 +30,7 @@ class AttendanceApp : Application() {
     override fun onCreate() {
         super.onCreate()
         applicationScope.launch {
-            com.attendancemanager.app.util.SampleData.seedIfEmpty(memberRepository, attendanceRepository)
+            com.attendancemanager.app.util.SampleData.seedIfEmpty(memberRepository, attendanceRepository, feeRepository)
         }
     }
 }
