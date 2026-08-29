@@ -6,6 +6,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.attendancemanager.app.AttendanceApp
 import com.attendancemanager.app.backup.BackupManager
 import com.attendancemanager.app.repository.AttendanceRepository
+import com.attendancemanager.app.repository.FeeRepository
 import com.attendancemanager.app.repository.HolidayRepository
 import com.attendancemanager.app.repository.MemberRepository
 
@@ -13,6 +14,7 @@ class ViewModelFactory(
     private val memberRepository: MemberRepository,
     private val attendanceRepository: AttendanceRepository,
     private val holidayRepository: HolidayRepository,
+    private val feeRepository: FeeRepository,
     private val backupManager: BackupManager
 ) : ViewModelProvider.Factory {
 
@@ -29,6 +31,8 @@ class ViewModelFactory(
                 DashboardViewModel(memberRepository, attendanceRepository, holidayRepository) as T
             modelClass.isAssignableFrom(ReportViewModel::class.java) ->
                 ReportViewModel(memberRepository, attendanceRepository, holidayRepository) as T
+            modelClass.isAssignableFrom(FeeViewModel::class.java) ->
+                FeeViewModel(feeRepository) as T
             modelClass.isAssignableFrom(MoreViewModel::class.java) ->
                 MoreViewModel(holidayRepository, backupManager) as T
             else -> throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
@@ -40,6 +44,7 @@ class ViewModelFactory(
             app.memberRepository,
             app.attendanceRepository,
             app.holidayRepository,
+            app.feeRepository,
             app.backupManager
         )
     }
