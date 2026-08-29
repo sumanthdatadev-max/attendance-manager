@@ -5,6 +5,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -14,14 +15,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.attendancemanager.app.ui.screens.AddEditMemberScreen
 import com.attendancemanager.app.ui.screens.AttendanceScreen
+import com.attendancemanager.app.ui.screens.FeeScreen
 import com.attendancemanager.app.ui.screens.HomeScreen
 import com.attendancemanager.app.ui.screens.MemberHistoryScreen
 import com.attendancemanager.app.ui.screens.MembersScreen
 import com.attendancemanager.app.ui.screens.MoreScreen
 import com.attendancemanager.app.ui.screens.ReportsScreen
+import com.attendancemanager.app.ui.viewmodel.FeeViewModel
 
 @Composable
-fun AppNavGraph() {
+fun AppNavGraph(viewModelFactory: com.attendancemanager.app.ui.viewmodel.ViewModelFactory) {
     val navController = rememberNavController()
 
     Scaffold(
@@ -35,6 +38,10 @@ fun AppNavGraph() {
             composable(Routes.HOME) { HomeScreen() }
             composable(Routes.ATTENDANCE) { AttendanceScreen() }
             composable(Routes.MEMBERS) { MembersScreen(navController) }
+            composable(Routes.FEES) {
+                val feeViewModel: FeeViewModel = viewModel(factory = viewModelFactory)
+                FeeScreen(feeViewModel)
+            }
             composable(Routes.REPORTS) { ReportsScreen(navController) }
             composable(Routes.MORE) { MoreScreen() }
 
@@ -64,7 +71,7 @@ private fun AppBottomBar(navController: androidx.navigation.NavController) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    // Only show the bottom bar on the five top-level tabs, not on Add/Edit/History screens.
+    // Only show the bottom bar on the top-level tabs, not on Add/Edit/History screens.
     val topLevelRoutes = bottomNavItems.map { it.route }.toSet()
     val isTopLevel = currentDestination?.route in topLevelRoutes
 
