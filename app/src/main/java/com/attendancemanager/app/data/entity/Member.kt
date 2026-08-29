@@ -16,7 +16,8 @@ data class Member(
     @PrimaryKey val memberId: String,
     val name: String,
     val mobile: String? = null,
-    val joiningDate: String,       // ISO yyyy-MM-dd
-    val leavingDate: String? = null, // ISO yyyy-MM-dd, null if still active/no leave date set
+    val classNumber: Int,                    // NEW: Student class (1-10) for fee calculation
+    val joiningDate: String,                 // ISO yyyy-MM-dd
+    val leavingDate: String? = null,         // ISO yyyy-MM-dd, null if still active/no leave date set
     val isActive: Boolean = true
 )
