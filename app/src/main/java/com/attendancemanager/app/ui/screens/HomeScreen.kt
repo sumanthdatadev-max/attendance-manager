@@ -1,5 +1,6 @@
-package com.attendancemanager.app.ui.screens
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 
+package com.attendancemanager.app.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
