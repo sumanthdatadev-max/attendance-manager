@@ -81,6 +81,7 @@ class MemberViewModel(
         member: Member,
         name: String,
         mobile: String?,
+        classNumber: Int,
         joiningDate: String,
         leavingDate: String?,
         isActive: Boolean,
@@ -95,6 +96,7 @@ class MemberViewModel(
                 member.copy(
                     name = trimmedName,
                     mobile = mobile?.trim()?.ifBlank { null },
+                    classNumber = classNumber,
                     joiningDate = joiningDate,
                     leavingDate = leavingDate,
                     isActive = isActive
