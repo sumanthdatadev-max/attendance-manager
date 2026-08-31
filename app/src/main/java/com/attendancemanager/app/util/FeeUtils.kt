@@ -9,10 +9,10 @@ package com.attendancemanager.app.util
  */
 fun calculateFeeByClass(classNumber: Int): Int {
     return when (classNumber) {
-        in 1..3 -> 250
-        in 4..6 -> 300
-        in 7..9 -> 400
+        1, 2, 3 -> 250
+        4, 5, 6 -> 300
+        7, 8, 9 -> 400
         10 -> 500
-        else -> 0  // Invalid class
+        else -> 0
     }
 }
