@@ -7,20 +7,23 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModelProvider
 import com.attendancemanager.app.ui.navigation.AppNavGraph
 import com.attendancemanager.app.ui.theme.AttendanceManagerTheme
-import dagger.hilt.android.AndroidEntryPoint
+import com.attendancemanager.app.ui.viewmodel.ViewModelFactory
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val app = application as AttendanceApp
+        val viewModelFactory = ViewModelFactory.from(app)
+
         setContent {
             AttendanceManagerTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    AppNavGraph()
+                    AppNavGraph(viewModelFactory = viewModelFactory)
                 }
             }
         }
