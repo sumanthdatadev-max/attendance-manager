@@ -37,6 +37,19 @@ class FeeRepository(
     }
 
     /**
+     * Get member name by member ID.
+     * Returns the member's name or the ID as fallback if member not found.
+     */
+    suspend fun getMemberNameById(memberId: String): String {
+        return try {
+            val member = memberDao.getMemberById(memberId)
+            member?.name ?: memberId
+        } catch (e: Exception) {
+            memberId
+        }
+    }
+
+    /**
      * Auto-generate fees for all members for a given month if they don't already exist.
      * This ensures the Fee Details list is always populated with all members.
      */
