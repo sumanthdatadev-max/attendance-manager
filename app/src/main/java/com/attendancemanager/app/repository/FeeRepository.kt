@@ -3,6 +3,7 @@ package com.attendancemanager.app.repository
 import com.attendancemanager.app.data.dao.FeeDao
 import com.attendancemanager.app.data.dao.MemberDao
 import com.attendancemanager.app.data.entity.Fee
+import com.attendancemanager.app.data.entity.Member
 import com.attendancemanager.app.data.entity.PaymentMethod
 import com.attendancemanager.app.util.calculateFeeByClass
 import kotlinx.coroutines.flow.Flow
@@ -46,6 +47,18 @@ class FeeRepository(
             member?.name ?: memberId
         } catch (e: Exception) {
             memberId
+        }
+    }
+
+    /**
+     * Get member by ID with all details.
+     * Returns the full Member object to check class number and other details.
+     */
+    suspend fun getMemberById(memberId: String): Member? {
+        return try {
+            memberDao.getMemberById(memberId)
+        } catch (e: Exception) {
+            null
         }
     }
 
