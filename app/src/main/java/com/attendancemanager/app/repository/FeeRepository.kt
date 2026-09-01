@@ -37,6 +37,33 @@ class FeeRepository(
     }
 
     /**
+     * Auto-generate fees for all members for a given month if they don't already exist.
+     * This ensures the Fee Details list is always populated with all members.
+     */
+    suspend fun ensureMonthlyFeesExist(yearMonth: String) {
+        val members = memberDao.getAllMembersOnce()
+        members.forEach { member ->
+            val existingFee = feeDao.getFeeRecord(member.memberId, yearMonth)
+            if (existingFee == null) {
+                val totalAmount = calculateFeeByClass(member.classNumber)
+                val newFee = Fee(
+                    memberId = member.memberId,
+                    yearMonth = yearMonth,
+                    totalAmount = totalAmount,
+                    paidAmount = 0,
+                    pendingAmount = totalAmount,
+                    isPaid = false,
+                    paymentMethod = null,
+                    lastPaidDate = null,
+                    upiTransactionId = null,
+                    remarks = null
+                )
+                feeDao.insertOrUpdateFee(newFee)
+            }
+        }
+    }
+
+    /**
      * Record a payment for a student's fee (partial or full) with payment method.
      * @param memberId Student ID
      * @param yearMonth Month in yyyy-MM format
@@ -92,22 +119,10 @@ class FeeRepository(
 
     /**
      * Generate or update fees for all active members for a given month.
-     * Should be called once per month.
+     * Alias for ensureMonthlyFeesExist for backward compatibility.
      */
     suspend fun generateMonthlyFees(yearMonth: String) {
-        val members = memberDao.getAllMembersOnce()
-        for (member in members) {
-            val feeAmount = calculateFeeByClass(member.classNumber)
-            val fee = Fee(
-                memberId = member.memberId,
-                yearMonth = yearMonth,
-                totalAmount = feeAmount,
-                paidAmount = 0,
-                pendingAmount = feeAmount,
-                isPaid = false
-            )
-            feeDao.insertOrUpdateFee(fee)
-        }
+        ensureMonthlyFeesExist(yearMonth)
     }
 
     /**
