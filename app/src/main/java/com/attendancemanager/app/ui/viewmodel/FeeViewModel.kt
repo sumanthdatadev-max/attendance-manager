@@ -7,6 +7,7 @@ import com.attendancemanager.app.data.entity.Fee
 import com.attendancemanager.app.data.entity.PaymentMethod
 import com.attendancemanager.app.data.dao.FeeSummary
 import com.attendancemanager.app.data.dao.PaymentMethodBreakdown
+import com.attendancemanager.app.util.calculateFeeByClass
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.time.YearMonth
@@ -22,7 +23,10 @@ data class FeeUIState(
 
 data class FeeWithMemberName(
     val fee: Fee,
-    val memberName: String
+    val memberName: String,
+    val currentClassNumber: Int,           // Current class from Member entity
+    val expectedFeeAmount: Int,            // What the fee should be based on current class
+    val hasClassMismatch: Boolean = false  // True if expectedFeeAmount != fee.totalAmount
 )
 
 class FeeViewModel(private val feeRepository: FeeRepository) : ViewModel() {
@@ -50,7 +54,7 @@ class FeeViewModel(private val feeRepository: FeeRepository) : ViewModel() {
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, FeeUIState())
 
-    // Fee details with member names
+    // Fee details with member names and class mismatch detection
     val feeDetailsWithNames: StateFlow<List<FeeWithMemberName>> = feeState
         .flatMapLatest { state ->
             if (state.allFees.isEmpty()) {
@@ -59,11 +63,18 @@ class FeeViewModel(private val feeRepository: FeeRepository) : ViewModel() {
                 flow {
                     val feesWithNames = mutableListOf<FeeWithMemberName>()
                     state.allFees.forEach { fee ->
-                        val memberName = feeRepository.getMemberNameById(fee.memberId)
+                        val member = feeRepository.getMemberById(fee.memberId)
+                        val currentClass = member?.classNumber ?: 0
+                        val expectedFee = calculateFeeByClass(currentClass)
+                        val hasMismatch = expectedFee != fee.totalAmount && expectedFee != 0
+
                         feesWithNames.add(
                             FeeWithMemberName(
                                 fee = fee,
-                                memberName = memberName
+                                memberName = member?.name ?: "Unknown",
+                                currentClassNumber = currentClass,
+                                expectedFeeAmount = expectedFee,
+                                hasClassMismatch = hasMismatch
                             )
                         )
                     }
