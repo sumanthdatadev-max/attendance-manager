@@ -25,6 +25,11 @@ class FeeViewModel(private val feeRepository: FeeRepository) : ViewModel() {
 
     val feeState: StateFlow<FeeUIState> = selectedYearMonth
         .flatMapLatest { yearMonth ->
+            // Auto-generate fees when month changes
+            viewModelScope.launch {
+                feeRepository.ensureMonthlyFeesExist(yearMonth)
+            }
+
             combine(
                 feeRepository.getMonthlyFees(yearMonth),
                 feeRepository.getPendingFees(yearMonth),
