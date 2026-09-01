@@ -20,6 +20,11 @@ data class FeeUIState(
     val selectedYearMonth: String = YearMonth.now().toString()
 )
 
+data class FeeWithMemberName(
+    val fee: Fee,
+    val memberName: String
+)
+
 class FeeViewModel(private val feeRepository: FeeRepository) : ViewModel() {
     private val selectedYearMonth = MutableStateFlow(YearMonth.now().toString())
 
@@ -44,6 +49,29 @@ class FeeViewModel(private val feeRepository: FeeRepository) : ViewModel() {
             }
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, FeeUIState())
+
+    // Fee details with member names
+    val feeDetailsWithNames: StateFlow<List<FeeWithMemberName>> = feeState
+        .flatMapLatest { state ->
+            if (state.allFees.isEmpty()) {
+                flowOf(emptyList())
+            } else {
+                flow {
+                    val feesWithNames = mutableListOf<FeeWithMemberName>()
+                    state.allFees.forEach { fee ->
+                        val memberName = feeRepository.getMemberNameById(fee.memberId)
+                        feesWithNames.add(
+                            FeeWithMemberName(
+                                fee = fee,
+                                memberName = memberName
+                            )
+                        )
+                    }
+                    emit(feesWithNames.sortedBy { it.memberName })
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     // Quick stats
     val totalDue: StateFlow<Int> = feeState
