@@ -10,13 +10,16 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.attendancemanager.app.data.entity.Fee
@@ -32,6 +35,9 @@ fun FeeScreen(viewModel: FeeViewModel) {
     val upiCollected by viewModel.upiCollected.collectAsState()
     val fullyPaidCount by viewModel.fullyPaidCount.collectAsState()
     val pendingCount by viewModel.pendingCount.collectAsState()
+    val feeDetailsWithNames by viewModel.feeDetailsWithNames.collectAsState()
+
+    var searchQuery by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -75,24 +81,94 @@ fun FeeScreen(viewModel: FeeViewModel) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Fee List
+        // Fee Details Header
         Text(
             "Fee Details",
             fontWeight = FontWeight.Bold,
             fontSize = 14.sp
         )
 
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            items(feeState.allFees) { fee ->
-                FeeCard(fee) { paymentAmount, paymentMethod, upiId ->
-                    viewModel.recordPayment(fee.memberId, paymentAmount, paymentMethod, upiId)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Search Bar
+        SearchBar(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Fee List
+        val filteredFees = if (searchQuery.isEmpty()) {
+            feeDetailsWithNames
+        } else {
+            feeDetailsWithNames.filter { feeWithName ->
+                feeWithName.memberName.contains(searchQuery, ignoreCase = true)
+            }
+        }
+
+        if (filteredFees.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    if (searchQuery.isEmpty()) "No fees data available" else "No members found matching '$searchQuery'",
+                    color = Color.Gray,
+                    fontSize = 14.sp
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(filteredFees) { feeWithName ->
+                    FeeCard(
+                        fee = feeWithName.fee,
+                        memberName = feeWithName.memberName
+                    ) { paymentAmount, paymentMethod, upiId ->
+                        viewModel.recordPayment(feeWithName.fee.memberId, paymentAmount, paymentMethod, upiId)
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+fun SearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    TextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text("Search by member name...") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                }
+            }
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.White,
+            unfocusedContainerColor = Color.White,
+            focusedIndicatorColor = Color.Transparent,
+            unfocusedIndicatorColor = Color.Transparent
+        ),
+        singleLine = true
+    )
 }
 
 @Composable
@@ -138,6 +214,7 @@ fun PaymentMethodCard(label: String, value: String, color: Color) {
 @Composable
 fun FeeCard(
     fee: Fee,
+    memberName: String,
     onPaymentClick: (Int, PaymentMethod, String?) -> Unit
 ) {
     var showPaymentDialog by remember { mutableStateOf(false) }
@@ -165,8 +242,8 @@ fun FeeCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
-                    Text("ID: ${fee.memberId}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(memberName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         "Total: ₹${fee.totalAmount}",
@@ -249,6 +326,7 @@ fun FeeCard(
     if (showPaymentDialog) {
         FeePaymentDialog(
             fee = fee,
+            memberName = memberName,
             onDismiss = { showPaymentDialog = false },
             onPaymentConfirm = { amount, method, upiId ->
                 onPaymentClick(amount, method, upiId)
@@ -261,6 +339,7 @@ fun FeeCard(
 @Composable
 fun FeePaymentDialog(
     fee: Fee,
+    memberName: String,
     onDismiss: () -> Unit,
     onPaymentConfirm: (Int, PaymentMethod, String?) -> Unit
 ) {
@@ -268,19 +347,25 @@ fun FeePaymentDialog(
     var selectedMethod by remember { mutableStateOf<PaymentMethod?>(null) }
     var upiTransactionId by remember { mutableStateOf("") }
 
+    // Auto-calculate pending amount
+    val calculatedPending = remember(paymentAmount) {
+        val paid = paymentAmount.toIntOrNull() ?: 0
+        (fee.pendingAmount - paid).coerceAtLeast(0)
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Record Payment - ${fee.memberId}") },
+        title = { Text("Record Payment - $memberName") },
         text = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
-                Text("Total: ₹${fee.totalAmount}", fontSize = 12.sp)
+                Text("Total: ₹${fee.totalAmount}", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                 Text("Already Paid: ₹${fee.paidAmount}", fontSize = 12.sp)
                 Text(
-                    "Pending: ₹${fee.pendingAmount}",
+                    "Outstanding: ₹${fee.pendingAmount}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFFF6B6B)
@@ -288,14 +373,52 @@ fun FeePaymentDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
+                Divider()
+
+                Spacer(modifier = Modifier.height(12.dp))
+
                 // Payment Amount Input
                 TextField(
                     value = paymentAmount,
                     onValueChange = { paymentAmount = it },
-                    label = { Text("Payment Amount") },
+                    label = { Text("Enter Paid Fee (₹)") },
                     placeholder = { Text("Enter amount") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = KeyboardType.Number
+                    )
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Auto-calculated Pending
+                if (paymentAmount.isNotEmpty()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFEF2F2))
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "Pending After Payment:",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp
+                            )
+                            Text(
+                                "₹$calculatedPending",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = if (calculatedPending > 0) Color(0xFFFF6B6B) else Color(0xFF51CF66)
+                            )
+                        }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -346,7 +469,8 @@ fun FeePaymentDialog(
                         onValueChange = { upiTransactionId = it },
                         label = { Text("UPI Transaction ID") },
                         placeholder = { Text("e.g., UPI1234567890") },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
                     )
                 }
             }
@@ -364,7 +488,7 @@ fun FeePaymentDialog(
                         }
                     }
                 },
-                enabled = paymentAmount.isNotEmpty() && selectedMethod != null
+                enabled = paymentAmount.isNotEmpty() && (paymentAmount.toIntOrNull() ?: 0) > 0 && selectedMethod != null
             ) {
                 Text("Confirm Payment")
             }
