@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import com.attendancemanager.app.data.entity.Fee
 import com.attendancemanager.app.data.entity.PaymentMethod
 import com.attendancemanager.app.ui.viewmodel.FeeViewModel
+import com.attendancemanager.app.ui.viewmodel.FeeWithMemberName
 
 @Composable
 fun FeeScreen(viewModel: FeeViewModel) {
@@ -130,7 +132,10 @@ fun FeeScreen(viewModel: FeeViewModel) {
                 items(filteredFees) { feeWithName ->
                     FeeCard(
                         fee = feeWithName.fee,
-                        memberName = feeWithName.memberName
+                        memberName = feeWithName.memberName,
+                        currentClassNumber = feeWithName.currentClassNumber,
+                        expectedFeeAmount = feeWithName.expectedFeeAmount,
+                        hasClassMismatch = feeWithName.hasClassMismatch
                     ) { paymentAmount, paymentMethod, upiId ->
                         viewModel.recordPayment(feeWithName.fee.memberId, paymentAmount, paymentMethod, upiId)
                     }
@@ -216,6 +221,9 @@ fun PaymentMethodCard(label: String, value: String, color: Color) {
 fun FeeCard(
     fee: Fee,
     memberName: String,
+    currentClassNumber: Int = 0,
+    expectedFeeAmount: Int = 0,
+    hasClassMismatch: Boolean = false,
     onPaymentClick: (Int, PaymentMethod, String?) -> Unit
 ) {
     var showPaymentDialog by remember { mutableStateOf(false) }
@@ -226,6 +234,7 @@ fun FeeCard(
             .clickable { showPaymentDialog = true },
         colors = CardDefaults.cardColors(
             containerColor = when {
+                hasClassMismatch -> Color(0xFFFFF3CD) // Yellow warning background
                 fee.isPaid -> Color(0xFFF0F9FF)
                 fee.pendingAmount > 0 -> Color(0xFFFEF2F2)
                 else -> Color.White
@@ -237,6 +246,39 @@ fun FeeCard(
                 .fillMaxWidth()
                 .padding(12.dp)
         ) {
+            // Class Mismatch Warning
+            if (hasClassMismatch) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFFFFE66D).copy(alpha = 0.3f), RoundedCornerShape(4.dp))
+                        .padding(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = "Class mismatch",
+                        tint = Color(0xFFFF8C00),
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "Class Updated",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFD97706)
+                        )
+                        Text(
+                            "Class $currentClassNumber: Expected ₹$expectedFeeAmount (Fee was ₹${fee.totalAmount})",
+                            fontSize = 10.sp,
+                            color = Color(0xFF7C2D12)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
             Row(
                 modifier = Modifier
                     .fillMaxWidth(),
@@ -251,6 +293,13 @@ fun FeeCard(
                         fontSize = 12.sp,
                         color = Color.Gray
                     )
+                    if (currentClassNumber > 0) {
+                        Text(
+                            "Class: $currentClassNumber",
+                            fontSize = 11.sp,
+                            color = Color.Gray
+                        )
+                    }
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
